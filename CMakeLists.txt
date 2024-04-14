@@ -4,7 +4,8 @@ add_subdirectory(deps/glfw)
 
 project("Ignarus")
 add_executable(${PROJECT_NAME} 
-                main.cpp
+                src/main.cpp
+                src/shadeutil.cpp
                 deps/GLAD/src/glad.c
                 )
 
@@ -16,4 +17,5 @@ target_link_libraries(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
                     PUBLIC deps/glfw/include 
                     PUBLIC deps/GLAD/include
+                    PUBLIC include
                             )

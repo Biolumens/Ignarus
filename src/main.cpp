@@ -1,20 +1,14 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
-#include "shadeutil.cpp"
+#include "shadeutil.h"
 #include <ios>
 #include <iostream>
 #include <iomanip>
 #include <signal.h>
 
-#define ASSERT(x) if (!(x)) raise(SIGTRAP);
-#define GLCALL(x) glClearError();\
-    x;\
-    ASSERT(glLogCall(#x, __FILE__, __LINE__));
-
 void framebuffer_size_callback(GLFWwindow *, int, int);
 void processInput(GLFWwindow *);
-static void glClearError();
-static bool glLogCall(const char* function, const char* file, int line);
+
 
 float vertices[12] = {
     -0.5f, -0.5f, 0.0f, // 0
@@ -52,6 +46,7 @@ int main(int argc, char *argv[]) {
 
   ShaderProgramSource source = parseShader("res/shaders/hello_triangle.glsl");
   unsigned int shaderProgram = createShader(source.VertexSource, source.FragmentSource);
+  
 
   unsigned int VBO, VAO;
   GLCALL(glGenVertexArrays(1, &VAO));
@@ -70,14 +65,17 @@ int main(int argc, char *argv[]) {
 
   GLCALL(glBindVertexArray(0));
 
-  GLCALL(glUseProgram(shaderProgram));
+
 
   GLCALL(int location = glGetUniformLocation(shaderProgram, "u_Color"));
   ASSERT(location != -1);
-  GLCALL(glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f));
+  //GLCALL(glUniform4f(location, 0.2f, 0.3f, 0.8f, 1.0f));
+
+  GLCALL(glUseProgram(shaderProgram));
 
   float r = 0.0f;
   float increment = 0.5f;
+
   while (!glfwWindowShouldClose(window)) {
 
     processInput(window);
@@ -87,17 +85,18 @@ int main(int argc, char *argv[]) {
 
     GLCALL(glBindVertexArray(VAO));
     
+  
     GLCALL(glUniform4f(location, r, 0.3f, 0.8f, 1.0f));
     GLCALL(glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr));
     
-    if (r > 1.0f) {
+   if (r > 1.0f) {
       increment = -0.05f;
     }
     else if (r < 0.0f) {
       increment = 0.05f;
     }
     r += increment;
-
+    
     glfwSwapBuffers(window);
     glfwPollEvents();
   }
@@ -118,21 +117,3 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
   GLCALL(glViewport(0, 0, height, width));
 }
 
-static void glClearError() {
-  while (glGetError() != GL_NO_ERROR)
-    ;
-}
-
-static bool glLogCall(const char* function, const char* file, int line) {
-
-  while (GLenum error = glGetError()) {
-
-    std::stringstream hexstream;
-    hexstream << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << error;
-    std::cout << "[OpenGL Error] (" << hexstream.str() << "): " << function << " "
-              << file << ":" << line << std::endl;
-    return false;
-  }
-
-  return true;
-}

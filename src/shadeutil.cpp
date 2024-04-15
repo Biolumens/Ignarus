@@ -1,17 +1,26 @@
 #include "glad/glad.h"
-#include <string>
+#include"shadeutil.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <iomanip>
 
-struct ShaderProgramSource {
+#ifdef __linux__
+#define ASSERT(x) if (!(x)) raise(SIGTRAP);
+#elif _WIN32
+#define ASSERT(x) if (!(x)) __debugbreak; 
+#endif
 
-    std::string VertexSource;
-    std::string FragmentSource;
+#define GLCALL(x) glClearError();\
+    x;\
+    ASSERT(glLogCall(#x, __FILE__, __LINE__));
 
-};
+void glClearError();
+bool glLogCall(const char* function, const char* file, int line);
 
-static ShaderProgramSource parseShader(const std::string& filepath) {
+
+
+ShaderProgramSource parseShader(const std::string& filepath) {
     std::ifstream stream(filepath);
 
     enum class ShaderType {
@@ -24,7 +33,7 @@ static ShaderProgramSource parseShader(const std::string& filepath) {
     std::stringstream ss[2];
     ShaderType type = ShaderType::NONE;
 
-    while (getline(stream, line)) {
+   while (getline(stream, line)) {
         if (line.find("#shader") != std::string::npos) {
             if (line.find("vertex") != std::string::npos) {
                 type = ShaderType::VERTEX;
@@ -34,25 +43,25 @@ static ShaderProgramSource parseShader(const std::string& filepath) {
         } else {
             ss[(int)type] << line << "\n";
         }
-    }
+   }
 
     return { ss[0].str(), ss[1].str() };
 }
 
-static unsigned int compileShader(const std::string& source, unsigned int type) {
+unsigned int compileShader(const std::string& source, unsigned int type) {
 
     unsigned int sp = glCreateShader(type);
     const char* c_src = source.c_str();
-    glShaderSource(sp, 1, &c_src, nullptr);
-    glCompileShader(sp);
+    GLCALL(glShaderSource(sp, 1, &c_src, nullptr));
+    GLCALL(glCompileShader(sp));
 
     int result;
-    glGetShaderiv(sp, GL_COMPILE_STATUS, &result);
+    GLCALL(glGetShaderiv(sp, GL_COMPILE_STATUS, &result));
     if (result == GL_FALSE) {
 
         int length;
         glGetShaderiv(sp, GL_INFO_LOG_LENGTH, &length);
-        char *message = (char *) alloca(length * sizeof(char)); 
+        char *message = (char *) _malloca(length * sizeof(char)); 
         glGetShaderInfoLog(sp, length, &length, message);
         
         std::cout << "SHADER ERROR: Failed to compile " << type << "!" << std::endl;
@@ -64,16 +73,16 @@ static unsigned int compileShader(const std::string& source, unsigned int type) 
     return sp;
 }
 
-static unsigned int createShader(const std::string& vertexShader, const std::string& fragmentShader) {
+unsigned int createShader(const std::string& vertexShader, const std::string& fragmentShader) {
 
     unsigned int program = glCreateProgram();
     unsigned int vsp = compileShader(vertexShader, GL_VERTEX_SHADER);
     unsigned int fsp = compileShader(fragmentShader, GL_FRAGMENT_SHADER);
 
-    glAttachShader(program, vsp);
-    glAttachShader(program, fsp);
-    glLinkProgram(program);
-    glValidateProgram(program);
+    GLCALL(glAttachShader(program, vsp));
+    GLCALL(glAttachShader(program, fsp));
+    GLCALL(glLinkProgram(program));
+    GLCALL(glValidateProgram(program));
 
     glDeleteShader(vsp);
     glDeleteShader(fsp);
@@ -81,3 +90,21 @@ static unsigned int createShader(const std::string& vertexShader, const std::str
     return program;
 }
 
+void glClearError() {
+    while (glGetError() != GL_NO_ERROR)
+       ;
+}
+
+bool glLogCall(const char* function, const char* file, int line) {
+
+    while (GLenum error = glGetError()) {
+
+        std::stringstream hexstream;
+        hexstream << "0x" << std::uppercase << std::setfill('0') << std::setw(4) << std::hex << error;
+        std::cout << "[OpenGL Error] (" << hexstream.str() << "): " << function << " "
+            << file << ":" << line << std::endl;
+        return false;
+    }
+
+    return true;
+}

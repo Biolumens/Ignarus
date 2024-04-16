@@ -1,6 +1,9 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 #include "shadeutil.h"
+#include "Renderer.h"
+#include "VertexBuffer.h"
+#include "IndexBuffer.h"
 #include <ios>
 #include <iostream>
 #include <iomanip>
@@ -48,21 +51,18 @@ int main(int argc, char *argv[]) {
   unsigned int shaderProgram = createShader(source.VertexSource, source.FragmentSource);
   
 
-  unsigned int VBO, VAO;
+  VertexBuffer *VBO = new VertexBuffer(vertices, 3 * 4 * sizeof(float));
+  //std::unique_ptr<VertexBuffer> VBO = std::make_unique<VertexBuffer>(vertices, 3 * 4 * sizeof(float));
+
+  unsigned int VAO;
   GLCALL(glGenVertexArrays(1, &VAO));
-  GLCALL(glGenBuffers(1, &VBO));
   GLCALL(glBindVertexArray(VAO));
-  GLCALL(glBindBuffer(GL_ARRAY_BUFFER, VBO));
-  GLCALL(glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 3 * 4, vertices, GL_STATIC_DRAW));
 
   GLCALL(glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, (void *)0));
   GLCALL(glEnableVertexAttribArray(0));
 
-  unsigned int IBO;
-  GLCALL(glGenBuffers(1, &IBO));
-  GLCALL(glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO));
-  GLCALL(glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * 3 * 2, indices, GL_STATIC_DRAW));
-
+  IndexBuffer *IBO = new IndexBuffer(indices, 6);
+  //std::unique_ptr<IndexBuffer> IBO = std::make_unique<IndexBuffer>(indices, 6);
   GLCALL(glBindVertexArray(0));
 
 
@@ -102,6 +102,9 @@ int main(int argc, char *argv[]) {
   }
 
   GLCALL(glDeleteProgram(shaderProgram));
+
+  delete(VBO); // I WOULD have used std::uniqe_ptr, but these need to be deleted before glfwTerminate() or 
+  delete(IBO); // OpenGL errors out. 
   glfwTerminate();
 
   return 0;

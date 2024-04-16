@@ -6,8 +6,11 @@ project("Ignarus")
 add_executable(${PROJECT_NAME} 
                 src/main.cpp
                 src/shadeutil.cpp
+                src/Renderer.cpp
+                src/VertexBuffer.cpp
+                src/IndexBuffer.cpp
                 deps/GLAD/src/glad.c
-                 "include/shadeutil.h")
+                 )
 
 target_link_libraries(${PROJECT_NAME}
                         glfw

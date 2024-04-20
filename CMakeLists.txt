@@ -5,12 +5,13 @@ add_subdirectory(deps/glfw)
 project("Ignarus")
 add_executable(${PROJECT_NAME} 
                 src/main.cpp
-                src/shadeutil.cpp
+                
                 src/Renderer.cpp
                 src/VertexBuffer.cpp
                 src/IndexBuffer.cpp
                 deps/GLAD/src/glad.c
-                 )
+                src/VertexArray.cpp 
+                src/Shader.cpp)
 
 target_link_libraries(${PROJECT_NAME}
                         glfw
